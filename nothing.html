@@ -19,7 +19,7 @@
             const phpIntegration = function () {
              // URL of the PHP resource
                 console.log("PHP-Integration");
-                const url = 'http://localhost:8888/update.php';
+                const url = 'http://localhost:8888/api/cereza/update.php';
              // Data to be sent to the PHP script
                 const data = {
                     key: 'value'
@@ -197,7 +197,7 @@
                 updateEventList();
             }
             function saveEventToOurRepository($event) {
-                const url = 'http://localhost:8888/update.php';
+                const url = 'http://localhost:8888/api/cereza/update.php';
              // Data to be sent to the PHP script
 
              // Sending a POST request
@@ -214,7 +214,7 @@
                  // fetched= JSON.stringify(data);
                 })
                 .catch((error) => {
-                    console.error('Error:', error);
+                    console.error('Error:');
                 });
             }
         </script>

@@ -112,11 +112,16 @@ VALUES ('" . $eventID . "', '" . $created . "', '" . 0 . "', '" . ($endDate) . "
         } else {
             $this->conn=$this->buildConn(parse_ini_file('to-do.ini'));
         }
-        $result = $this->conn->query($sql);
+        try {
+            $result = $this->conn->query($sql);
+        } catch( Exception $exception) {
+            error_log($exception->getMessage());
+            return '{        "status": "not-ok"    }';
+        }
 
         if ($this->conn->connect_error) {
             error_log('connect error');
-            echo "{        \"status\": \"not-ok\"    }"; 
+            echo '{        "status": "not-ok"    }'; 
             die("Connection failed: " . $this->conn->connect_error);
         } 
         error_log('[' . $this->conn->affected_rows . '] Affected Row(s)');
@@ -147,7 +152,7 @@ VALUES ('" . $eventID . "', '" . $created . "', '" . 0 . "', '" . ($endDate) . "
 
         if ($this->conn->connect_error) {
             error_log('connect error');
-            echo "{        \"status\": \"not-ok\"    }"; 
+            echo '{        "status": "not-ok"    }'; 
             die("Connection failed: " . $this->conn->connect_error);
         } 
         error_log("[" . $this->conn->affected_rows  . "] affected record(s)");
