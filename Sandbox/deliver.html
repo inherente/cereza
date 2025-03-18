@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Refresh PHP</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to external CSS -->
+</head>
+
+<body>
+
+    <h2>Live Telegram Data Delivery</h2>
+    <p>This is frequently being refreshed</p>
+    <div id="refresh-period">...loading...</div>
+    <div class="toggle-container">
+        <label class="toggle-switch">
+            <input type="checkbox" id="toggleFetch" checked>
+            <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Auto Refreshed</span>
+    </div>
+    <textarea id="output">...loading...</textarea>
+
+    <script>
+        let fetchInterval; // Variable to store the interval ID
+        let isFetching = true; // State to track if fetching is active
+
+        function fetchData() {
+            fetch("deliver.php") // Calls the PHP script
+                .then(response => response.text()) // Get text response
+                .then(data => {
+                    document.getElementById("output").innerHTML = data; // Update the HTML content
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        function processElement(response) {
+            console.log('Adding to DB');
+            console.log(typeof response);
+            let parsedResponse = response;
+            let messageCollection;
+            if (typeof response === "string") {
+                parsedResponse = JSON.parse(response);
+            }
+            if (parsedResponse && Array.isArray(parsedResponse.result)) {
+                console.log("Valid data");
+                messageCollection = parsedResponse.result.map(update => ({
+                    updateId: update.update_id,
+                    messageId: update.message.message_id,
+                    senderId: update.message.from.id,
+                    senderName: `${update.message.from.first_name} ${update.message.from.last_name}`,
+                    isBot: update.message.from.is_bot,
+                    chatId: update.message.chat.id,
+                    chatType: update.message.chat.type,
+                    timestamp: update.message.date,
+                    date: new Date(update.message.date * 1000).toUTCString(), // Convert Unix timestamp
+                    text: update.message.text,
+                    language: update.message.from.language_code
+                }));
+            } else {
+                console.log("Some wrong data received");
+                console.log(response);
+             // console.log(messageCollection);
+            }
+            if (messageCollection && Array.isArray(messageCollection)) {
+                messageCollection.forEach(callToSave);
+            } else {
+                console.log("Empty or invalid collection");
+            }
+        }
+
+        async function callToSave(message, index, array) {
+            console.log(message.updateId);
+            try {
+                const response = await fetch('save.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(message)
+                });
+
+                const result = await response.json();
+                console.log("Server Response:", result);
+            } catch (error) {
+                console.log(error);
+                console.error("Error saving message:", error);
+            }
+        }
+
+        function startFetching(timeElapse) {
+            console.log(timeElapse);
+            fetchData(); // Fetch once immediately
+            fetchInterval = setInterval(fetchData, timeElapse); // Start the interval
+            isFetching = true;
+        }
+
+        function stopFetching() {
+            clearInterval(fetchInterval); // Stop the interval
+            isFetching = false;
+        }
+
+     // Toggle Play/Pause when the switch is clicked
+        document.getElementById("toggleFetch").addEventListener("change", function () {
+            if (this.checked) {
+                startFetching(30000);
+            } else {
+                stopFetching();
+            }
+        });
+     // Call the function with the desired plugin name
+        let data = fetchPluginConfigAndStartFetching("PUSH");  // Replace with actual plugin name
+        console.log('called');
+     // Start fetching when the page loads
+
+     // Function to fetch plugin configuration based on the 'name' query parameter
+        function fetchPluginConfigAndStartFetching(pluginName) {
+            let refreshPeriod;
+            let state;
+            let status;
+            let returnedData;
+            console.log(pluginName);
+            fetch(`config.php?name=${pluginName}`)
+                .then(response => response.json()) // Parse response as JSON
+                .then(data => {
+                    if (data.error) {
+                     // Handle error if no plugin is found
+                        document.getElementById("refresh-period").innerText = `Error: ${data.error}`;
+                    } else {
+                     // Extract the REFRESH_PERIOD value from the response
+                        refreshPeriod = data.REFRESH_PERIOD;
+                        state = data.STATE;
+                        status = data.STATUS;
+                        document.getElementById("refresh-period").innerText = `Refresh Period: ${refreshPeriod} seconds`;
+                        returnedData = data;
+                        console.log('call-returned');
+                        startFetching(data.REFRESH_PERIOD);
+
+                    }
+                })
+                .catch(error => {
+                 // Handle any fetch errors
+                    document.getElementById("refresh-period").innerText = `Error fetching data: ${error}`;
+                });
+            return returnedData;
+        }
+
+    </script>
+
+</body>
+
+</html>
