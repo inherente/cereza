@@ -17,6 +17,23 @@ function getDatabaseConfig($file = "db.ini") {
     return parse_ini_file($file, true)["database"];
 }
 
+function getRandomAnswer($conn, $messageId) {
+
+    $response= "Unknow Question";
+    $checkStmt = $conn->prepare("SELECT TA.answer FROM TELEGRAM_MESSAGE T JOIN TELEGRAM_QUESTION vtq ON vtq.question= T.text JOIN `MAP_TELEGRAM_QUESTION_ANSWER` mtqa ON mtqa.question_id = vtq.id JOIN TELEGRAM_ANSWER TA ON TA.id= mtqa.answer_id Where T.telegram_message_id= ? AND TA.enabled = 1 ORDER BY RAND() LIMIT 1");
+    $checkStmt->bind_param("i", $messageId);
+    $checkStmt->execute();
+    $checkStmt->bind_result($answer);
+    
+    if ($checkStmt->fetch()) {
+        $response= $answer;
+    } else {
+        $response= "No results found.";
+    }   
+    $checkStmt->close();
+    return $response;
+}
+
 function updateMessageStatus($conn, $messageId) {
     $sql="UPDATE TELEGRAM_QUEUE T SET T.STATE= 'Done' WHERE T.message_id = ? ";
     $stmt = $conn->prepare($sql);
@@ -119,8 +136,9 @@ if ($result->num_rows > 0) {
         $text = $row["text"];
         $messageId= $row["telegram_message_id"];
 
+        $answer= getRandomAnswer($conn, $messageId);
      // Call internal API
-        sendToInternalAPI($chat_id, $text);
+        sendToInternalAPI($chat_id, $answer);
         updateMessageStatus($conn, $messageId);
     }
 } else {
