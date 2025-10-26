@@ -10,7 +10,7 @@ $data = json_decode($inputJSON, true);
 
  // Validate input
 if (!$data || !isset($data["messageId"], $data["senderId"], $data["text"])) {
-    echo json_encode(["success" => false, "message" => "Invalid data received"]);
+    echo json_encode(["success" => false, "message" => "Missing/Invalid data received"]);
     exit;
 }
 

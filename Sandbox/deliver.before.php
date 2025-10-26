@@ -17,73 +17,7 @@ function getDatabaseConfig($file = "db.ini") {
     return parse_ini_file($file, true)["database"];
 }
 
-function callToAction($jsonAnswer) {
-    $decodedJsonAnswer = json_decode($jsonAnswer, true);
-    $url=''; // 404 php
-    if($decodedJsonAnswer) {
-        $url=$decodedJsonAnswer['action'];
-    }
-    $payload = ['eventName' => 'value-1', 'emailAddress' => 'value-2'];
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    $data = json_decode($response, true);
-    return $data['result']['text'];
-}
-
-function collectRequiredDataAndAnswer($conn, $userChatId, $userText) {
- // Prepare the statement with placeholders
-    $stmt = $conn->prepare("CALL ComplexAnswer(?, ?, @answer)");
-    $answer='';
-    $action='';
-    $error='';
-    
-    if (!$stmt) {
-        throw new Exception("Preparation failed: " . $conn->error);
-    }
-
- // Bind the input parameters
-    $stmt->bind_param("is", $userChatId, $userText);
-
- // Execute the stored procedure
-    if (!$stmt->execute()) {
-        throw new Exception("Execution failed: " . $stmt->error);
-    }
-
- // Free result to be able to fetch OUT param
-    $stmt->close();
-
- // Now retrieve the OUT parameter
-    $result = $conn->query("SELECT @answer AS answer");
-
-    if (!$result) {
-        throw new Exception("Fetching OUT param failed: " . $conn->error);
-    }
-
-    $row = $result->fetch_assoc();
-    if ($row) {
-        $json = json_decode($row['answer'], true); // true = associative array
-        $answer = $json['answer'] ?? 'No-thing found';   
-        $action = $json['action'] ?? '';   
-        $error = $json['error'] ?? '';   
-    }
-
-    $responseStructure = [
-        "answer" => $answer,
-        "error" => $error,
-        "action" => $action
-    ];
-
-    return json_encode($responseStructure);
-}
-
-function getRandomAnswer($conn, $messageId, $defaultResponse) {
+function getRandomAnswer($conn, $messageId) {
 
     $response= "Unknow Question";
     $checkStmt = $conn->prepare("SELECT TA.answer FROM TELEGRAM_MESSAGE T JOIN TELEGRAM_QUESTION vtq ON vtq.question= T.text JOIN `MAP_TELEGRAM_QUESTION_ANSWER` mtqa ON mtqa.question_id = vtq.id JOIN TELEGRAM_ANSWER TA ON TA.id= mtqa.answer_id Where T.telegram_message_id= ? AND TA.enabled = 1 ORDER BY RAND() LIMIT 1");
@@ -94,19 +28,10 @@ function getRandomAnswer($conn, $messageId, $defaultResponse) {
     if ($checkStmt->fetch()) {
         $response= $answer;
     } else {
-        $response= $defaultResponse;
+        $response= "No results found.";
     }   
     $checkStmt->close();
-
-    $responseStructure = [
-        "answer" => $response,
-        "error" => "",
-        "action" => ""
-    ];
-    
-    $json = json_encode($responseStructure);
-
-    return $json;
+    return $response;
 }
 
 function updateMessageStatus($conn, $messageId) {
@@ -199,11 +124,10 @@ $sql = "SELECT TM.telegram_message_id, TM.from_id, TM.chat_id, TM.text
         FROM TELEGRAM_MESSAGE TM
         JOIN TELEGRAM_QUEUE TQ ON TQ.message_id = TM.telegram_message_id
         WHERE TQ.state IS NULL";
-$actionResultText='';
+
  // Execute the check query
 $result = $conn->query($sql);
-$defaultResponse="No results found.";
- // Step 2: Check for queued message.
+
  // Check if rows were returned
 if ($result->num_rows > 0) {
  // Loop through the result set
@@ -212,26 +136,10 @@ if ($result->num_rows > 0) {
         $text = $row["text"];
         $messageId= $row["telegram_message_id"];
 
-        $jsonAnswer= getRandomAnswer($conn, $messageId, $defaultResponse);
-        $decodedJsonAnswer = json_decode($jsonAnswer, true);
-     // $answer=$jsonAnswer['answer'];
-     // Let try find a Scnene anyway
-     // $decodedJsonAnswer['answer']==$defaultResponse
-        if($decodedJsonAnswer['answer']==$defaultResponse) {
-            $jsonAnswer=collectRequiredDataAndAnswer($conn, $chat_id, $text);
-            $decodedJsonAnswer = json_decode($jsonAnswer, true);
-        }
-        if(empty($decodedJsonAnswer['action'] || 'none' == $decodedJsonAnswer['action'])) {
-            ;
-        } else {
-            $actionResultText=callToAction($jsonAnswer);
-        }
+        $answer= getRandomAnswer($conn, $messageId);
      // Call internal API
-        sendToInternalAPI($chat_id, $decodedJsonAnswer['answer']);
+        sendToInternalAPI($chat_id, $answer);
         updateMessageStatus($conn, $messageId);
-        if($actionResultText) {
-            sendToInternalAPI($chat_id, $actionResultText);
-        }
     }
 } else {
     echo json_encode([
@@ -239,7 +147,6 @@ if ($result->num_rows > 0) {
         "message" => "No results found."
     ]);
 }
- // Release lock just before closing connection
 releaseLock($conn);
 
  // Close the connection
