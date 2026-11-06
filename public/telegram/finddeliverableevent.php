@@ -7,13 +7,7 @@ ini_set('display_errors', 1);
  // Read the JSON input
 $inputJSON = file_get_contents("php://input");
 $data = json_decode($inputJSON, true);
- // Function to load database configuration from an .ini file
-function getDatabaseConfig($file = "db.ini") {
-    if (!file_exists($file)) {
-        die(json_encode(["error" => "Configuration file not found."]));
-    }
-    return parse_ini_file($file, true)["database"];
-}
+require __DIR__ . '/../../source/Config.php';
 
 function getAvailableSlotCollection ($conn) {
     // Check connection

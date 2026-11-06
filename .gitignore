@@ -1,1 +1,8 @@
 .DS_Store
+
+# Local configuration (contains DB credentials) — keep db.ini.example committed
+config/db.ini
+credentials.json
+
+# Composer / vendor libraries
+vendor/

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cereza — Telegram Console</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <style>
+        .mode-selector { margin: 16px 0; }
+        #output { width: 90%; height: 240px; margin-top: 20px; }
+    </style>
+</head>
+
+<body>
+
+    <h2>Telegram Console</h2>
+    <div id="refresh-period">...loading...</div>
+
+    <div class="mode-selector">
+        <label for="mode">Mode: </label>
+        <select id="mode">
+            <option value="PULL">Poll (getUpdates → save)</option>
+            <option value="PUSH">Deliver (process queue)</option>
+        </select>
+    </div>
+
+    <div class="toggle-container">
+        <label class="toggle-switch">
+            <input type="checkbox" id="toggleFetch" checked>
+            <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Auto Refresh</span>
+    </div>
+    <textarea id="output" readonly>...loading...</textarea>
+
+    <script>
+        let fetchInterval;
+        let isFetching = true;
+        let mode = 'PULL';
+
+        const endpoints = {
+            PULL: 'pull.php',
+            PUSH: 'deliver.php'
+        };
+
+        function fetchData() {
+            fetch(endpoints[mode])
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('output').value = data;
+                    if (mode === 'PULL') {
+                        queueElement(data);
+                    }
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // PULL mode: parse the getUpdates result array and persist each update.
+        function queueElement(response) {
+            let parsed = response;
+            if (typeof response === 'string') {
+                parsed = JSON.parse(response);
+            }
+            if (!parsed || !Array.isArray(parsed.result)) {
+                return;
+            }
+            const messages = parsed.result.map(update => ({
+                updateId: update.update_id,
+                messageId: update.message.message_id,
+                senderId: update.message.from.id,
+                senderName: `${update.message.from.first_name} ${update.message.from.last_name}`,
+                isBot: update.message.from.is_bot,
+                chatId: update.message.chat.id,
+                chatType: update.message.chat.type,
+                timestamp: update.message.date,
+                date: new Date(update.message.date * 1000).toUTCString(),
+                text: update.message.text,
+                language: update.message.from.language_code
+            }));
+            messages.forEach(callToSave);
+        }
+
+        async function callToSave(message) {
+            try {
+                await fetch('save.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(message)
+                });
+            } catch (error) {
+                console.error('Error saving message:', error);
+            }
+        }
+
+        function startFetching(intervalMs) {
+            stopFetching();
+            fetchData();
+            fetchInterval = setInterval(fetchData, intervalMs);
+            isFetching = true;
+        }
+
+        function stopFetching() {
+            clearInterval(fetchInterval);
+            isFetching = false;
+        }
+
+        document.getElementById('toggleFetch').addEventListener('change', function () {
+            if (this.checked) {
+                fetchPluginConfigAndStartFetching(mode);
+            } else {
+                stopFetching();
+            }
+        });
+
+        document.getElementById('mode').addEventListener('change', function () {
+            mode = this.value;
+            fetchPluginConfigAndStartFetching(mode);
+        });
+
+        // Loads REFRESH_PERIOD (in ms) from the PLUGIN_CONFIGURATION table and starts polling.
+        function fetchPluginConfigAndStartFetching(pluginName) {
+            fetch(`config.php?name=${pluginName}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('refresh-period').innerText = `Error: ${data.error}`;
+                        return;
+                    }
+                    document.getElementById('refresh-period').innerText =
+                        `Interval: ${data.REFRESH_PERIOD} ms (${pluginName})`;
+                    startFetching(Number(data.REFRESH_PERIOD));
+                })
+                .catch(error => {
+                    document.getElementById('refresh-period').innerText = `Error fetching config: ${error}`;
+                });
+        }
+
+        // Start on load.
+        fetchPluginConfigAndStartFetching(mode);
+    </script>
+
+</body>
+
+</html>

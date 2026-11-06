@@ -1,12 +1,13 @@
 <?php
-include 'converter.php';
+require __DIR__ . '/Converter.php';
+require __DIR__ . '/../Config.php';
 class CerezaDAO {
     public $conn;
  // $failedData = "{        \"status\": \"ok\"    }";
     public function __construct() {
         error_log("Construct (ing)");
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-        $config = parse_ini_file('to-do.ini');
+        $config = getDatabaseConfig();
         $this->conn=$this->buildConn($config);
         if(isset($this->conn)) {
             error_log("Connection prepared");
@@ -18,10 +19,10 @@ class CerezaDAO {
 
     public function buildConn($config) {
         error_log("Building conn");
-        $servername = $config['dbhost'];  
-        $username = $config['user'];
-        $password = $config['password']; 
-        $dbname = $config['dbname'];
+        $servername = $config['host'];
+        $username = $config['username'];
+        $password = $config['password'];
+        $dbname = $config['database'];
         return new mysqli($servername, $username, $password, $dbname);
 
     }
@@ -110,7 +111,7 @@ VALUES ('" . $eventID . "', '" . $created . "', '" . 0 . "', '" . ($endDate) . "
         if(isset($this->conn)) {
             error_log("Connection ready");
         } else {
-            $this->conn=$this->buildConn(parse_ini_file('to-do.ini'));
+            $this->conn=$this->buildConn(getDatabaseConfig());
         }
         try {
             $result = $this->conn->query($sql);
@@ -145,7 +146,7 @@ VALUES ('" . $eventID . "', '" . $created . "', '" . 0 . "', '" . ($endDate) . "
         if(isset($this->conn)) {
             error_log("Connection ready");
         } else {
-            $this->conn=$this->buildConn(parse_ini_file('to-do.ini'));
+            $this->conn=$this->buildConn(getDatabaseConfig());
         }
         $result = $this->conn->query($sql);
         error_log("[" . $result->num_rows . "] found record(s)");
@@ -163,7 +164,7 @@ VALUES ('" . $eventID . "', '" . $created . "', '" . 0 . "', '" . ($endDate) . "
             if(isset($this->conn)) {
                 error_log("Connection ready");
             } else {
-                $this->conn=$this->buildConn(parse_ini_file('to-do.ini'));
+                $this->conn=$this->buildConn(getDatabaseConfig());
             }
             $result = $this->conn->query($sql);
     
