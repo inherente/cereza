@@ -23,13 +23,7 @@ $isBot= $data["isBot"];
 $senderName= $data["senderName"];
 $languageCode= $data["language"];
 
- // Function to load database configuration from an .ini file
-function getDatabaseConfig($file = "db.ini") {
-    if (!file_exists($file)) {
-        die(json_encode(["error" => "Configuration file not found."]));
-    }
-    return parse_ini_file($file, true)["database"];
-}
+require __DIR__ . '/../../source/Config.php';
 
  // Load database configuration
 $config = getDatabaseConfig();

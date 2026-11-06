@@ -7,7 +7,7 @@ $content = file_get_contents("php://input");
 $data = json_decode($content, true);
 // Function to send data to save.php
 function save($jsonData) {
-    $url = "https://api.cerezasanta.com/Sandbox/save.php"; // actual save.php URL
+    $url = "https://api.cerezasanta.com/telegram/save.php"; // actual save.php URL
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);

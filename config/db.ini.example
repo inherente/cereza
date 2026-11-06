@@ -1,0 +1,7 @@
+; Copy this file to db.ini and fill in real credentials.
+; db.ini is gitignored and must never be committed.
+[database]
+host = "localhost"
+username = "your_db_user"
+password = "your_db_password"
+database = "your_db_name"

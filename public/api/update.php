@@ -1,6 +1,6 @@
 
 <?php
-    include 'cerezaDAO.php';
+    require __DIR__ . '/../../source/Calendar/CerezaDAO.php';
     function doIt() {
         $requestBody = file_get_contents('php://input');
         $cerezaDAO = new CerezaDAO();

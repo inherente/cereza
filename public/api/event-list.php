@@ -1,7 +1,7 @@
 <?php
 
  // 1. Include the Database Connection Class
-require_once 'DBConnect.php';
+require_once __DIR__ . '/../../source/Database/DBConnect.php';
 
  // 2. Set Header for JSON Output
 header('Content-Type: application/json');

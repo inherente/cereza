@@ -9,13 +9,7 @@ $lockName= 'Queue';
 $inputJSON = file_get_contents("php://input");
 $data = json_decode($inputJSON, true);
 
- // Function to load database configuration from an .ini file
-function getDatabaseConfig($file = "db.ini") {
-    if (!file_exists($file)) {
-        die(json_encode(["error" => "Configuration file not found."]));
-    }
-    return parse_ini_file($file, true)["database"];
-}
+require __DIR__ . '/../../source/Config.php';
 
 function callToAction($jsonAnswer) {
     $decodedJsonAnswer = json_decode($jsonAnswer, true);
@@ -146,7 +140,7 @@ function takeLock($conn, $lockName) {
  */
 function sendToInternalAPI($chat_id, $text) {
  // Build the full URL with query parameters
-    $url = "https://api.cerezasanta.com/Sandbox/push.php?chatId=" . urlencode($chat_id) . "&text=" . urlencode($text);
+    $url = "https://api.cerezasanta.com/telegram/push.php?chatId=" . urlencode($chat_id) . "&text=" . urlencode($text);
 
  // Initialize cURL
     $ch = curl_init();
