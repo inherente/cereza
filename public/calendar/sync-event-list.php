@@ -45,9 +45,15 @@ try {
         exit;
     }
 
-} catch (Exception $e) {
+} catch (\PDOException $e) {
     http_response_code(500);
-    echo json_encode(["error" => "Database connection failed"]);
+    error_log("[sync-events] DB connection error: " . $e->getMessage());
+    echo json_encode(["error" => "Database connection failed", "detail" => $e->getMessage()]);
+    exit;
+} catch (\Exception $e) {
+    http_response_code(500);
+    error_log("[sync-events] error: " . $e->getMessage());
+    echo json_encode(["error" => $e->getMessage()]);
     exit;
 }
 
@@ -63,7 +69,13 @@ try {
         exit;
     }
     echo $response;
-} catch (Exception $e) {
-    echo json_encode(["error" => "Database connection failed"]);
+} catch (\PDOException $e) {
+    http_response_code(500);
+    error_log("[sync-events] DB error during upsert: " . $e->getMessage());
+    echo json_encode(["error" => "Database connection failed", "detail" => $e->getMessage()]);
+} catch (\Exception $e) {
+    http_response_code(500);
+    error_log("[sync-events] error during upsert: " . $e->getMessage());
+    echo json_encode(["error" => $e->getMessage()]);
 }
 ?>
