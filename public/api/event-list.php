@@ -1,56 +1,40 @@
 <?php
+// 1. Include the Data Access Class dependencies
+require_once __DIR__ . '/../../source/Calendar/CalendarDAO.php';
 
- // 1. Include the Database Connection Class
-require_once __DIR__ . '/../../source/Database/DBConnect.php';
-
- // 2. Set Header for JSON Output
+// 2. Set Headers for public client cross-origin traffic
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); 
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
 
+// 3. Tenant is resolved from the MySQL connection identity (USER()).
 
- // 3. Initialize Connection and Get PDO Object
-$dbConnection = new DBConnect();
-$pdo = $dbConnection->getPDO();
-
-
- // 4. Define the SQL Query
- // We select key fields and order by start_time.
-$sql = "SELECT 
-            google_event_id, 
-            summary, 
-            description, 
-            location, 
-            start_time, 
-            end_time, 
-            is_all_day 
-        FROM calendar_event ce
-        Where ce.tenant_username = USER()
-        ORDER BY start_time ASC";
-
-
- // 5. Execute the Query and Handle Response
 try {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-    
- // Fetch all results as an associative array
-    $events = $stmt->fetchAll();
+    // 4. Instantiate the DAO layer and run the structured abstraction query
+    $calendarDao = new CalendarDAO();
+    $events = $calendarDao->fetchEventsWithAttachments();
 
- // Return Success Response
+    // 5. Return success payload downstream to Angular
     http_response_code(200);
     echo json_encode([
         "status" => "success",
-        "count" => count($events),
-        "data" => $events
+        "count"  => count($events),
+        "data"   => $events
     ]);
 
 } catch (\PDOException $e) {
- // Return Error Response
+    error_log("[event-list.php] Critical DB Failure: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
-        "status" => "error",
-        "message" => "Could not retrieve events." // Hide detailed error for security
+        "status"  => "error",
+        "message" => "Could not retrieve events due to a server infrastructure issue."
+    ]);
+} catch (\Exception $e) {
+    error_log("[event-list.php] Runtime Failure: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        "status"  => "error",
+        "message" => "An unexpected application issue occurred."
     ]);
 }
-
 ?>
