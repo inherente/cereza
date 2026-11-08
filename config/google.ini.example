@@ -1,0 +1,7 @@
+; Copy this file to google.ini and fill in real Google OAuth credentials.
+; google.ini is gitignored and must never be committed.
+[google]
+client_id = "your_google_client_id.apps.googleusercontent.com"
+client_secret = "your_google_client_secret"
+redirect_uri = "https://your-domain/google-calendar/oauth2callback.php"
+calendar_id = "your-calendar-id@group.calendar.google.com"

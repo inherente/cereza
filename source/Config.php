@@ -1,14 +1,14 @@
 <?php
 /**
- * Shared database configuration loader.
+ * Shared configuration loaders.
  *
- * Returns the [database] section of config/db.ini. Every DB-using entry point
- * should call getDatabaseConfig() instead of re-defining its own loader, so the
- * connection config lives in exactly one place.
+ * - getDatabaseConfig(): the [database] section of config/db.ini
+ * - getGoogleConfig():   the [google] section of config/google.ini
  *
- * @param string|null $file INI path; defaults to <repo>/config/db.ini
- * @return array The [database] section of the INI file
+ * Both files are gitignored and contain secrets; committable *.example
+ * templates are kept beside them.
  */
+
 function getDatabaseConfig($file = null) {
     if ($file === null) {
         $file = __DIR__ . '/../config/db.ini';
@@ -18,4 +18,15 @@ function getDatabaseConfig($file = null) {
         die(json_encode(['error' => 'Configuration file not found.']));
     }
     return parse_ini_file($file, true)['database'];
+}
+
+function getGoogleConfig($file = null) {
+    if ($file === null) {
+        $file = __DIR__ . '/../config/google.ini';
+    }
+    if (!file_exists($file)) {
+        http_response_code(500);
+        die(json_encode(['error' => 'Google configuration file not found.']));
+    }
+    return parse_ini_file($file, true)['google'];
 }
