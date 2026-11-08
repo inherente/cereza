@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/Converter.php';
-require __DIR__ . '/../Config.php';
+require __DIR__ . '/../Database/Config.php';
 class CerezaDAO {
     public $conn;
  // $failedData = "{        \"status\": \"ok\"    }";

@@ -6,7 +6,7 @@ if (isset($_SERVER['HTTP_HOST'])) {
 }
 
 require_once __DIR__ . '/../source/Database/DBConnect.php';
-require_once __DIR__ . '/../source/Config.php';
+require_once __DIR__ . '/../source/Google/Config.php';
 
 $google         = getGoogleConfig();
 $client_id      = $google['client_id'];

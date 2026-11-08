@@ -7,7 +7,7 @@ ini_set('display_errors', 1);
  // Read the JSON input
 $inputJSON = file_get_contents("php://input");
 $data = json_decode($inputJSON, true);
-require __DIR__ . '/../../source/Config.php';
+require __DIR__ . '/../../source/Database/Config.php';
 
 function getAvailableSlotCollection ($conn) {
     // Check connection

@@ -9,7 +9,7 @@ $lockName= 'Queue';
 $inputJSON = file_get_contents("php://input");
 $data = json_decode($inputJSON, true);
 
-require __DIR__ . '/../../source/Config.php';
+require __DIR__ . '/../../source/Database/Config.php';
 
 function callToAction($jsonAnswer) {
     $decodedJsonAnswer = json_decode($jsonAnswer, true);
