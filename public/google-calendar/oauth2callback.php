@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../source/Config.php';
+require_once __DIR__ . '/../../source/Google/Config.php';
 require_once __DIR__ . '/../../source/Database/DBConnect.php';
 
 // Google credentials + calendar id are loaded from config/google.ini (gitignored)

@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../../source/Config.php';
+require __DIR__ . '/../../source/Database/Config.php';
 
 // Load database configuration
 $config = getDatabaseConfig();
